@@ -8,6 +8,7 @@
 
 from trac.config import ListOption
 from trac.core import Component, implements
+from trac.perm import PermissionSystem
 from trac.ticket.model import _fixup_cc_list
 from trac.ticket.web_ui import TicketModule
 from trac.util.text import obfuscate_email_address
@@ -141,8 +142,12 @@ class AutocompleteUsers(Component):
         can_view = Chrome(self.env).show_email_addresses or \
             'EMAIL_VIEW' in req.perm
         users = []
+        perm = PermissionSystem(self.env)
+        autocomplete_users = perm.get_users_with_permission('TRAC_ADMIN')
         for user_data in self.env.get_known_users():
             user_data = [value or '' for value in user_data]
+            if user_data[USER] not in autocomplete_users:
+                continue
             if not can_view and user_data[EMAIL]:
                 user_data[EMAIL] = obfuscate_email_address(user_data[EMAIL])
             for index, field in enumerate((USER, EMAIL, NAME)):  # ordered by how they appear
